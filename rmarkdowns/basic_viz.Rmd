@@ -85,7 +85,7 @@ Let's make our first plot!
 
 In the following code, we're:
   
-  - Using the `ggplot()` function
+  - Using the `ggplot()!` function
   - Passing our dataframe `sdr_data` to the data argument
   - Putting SDG 3 Scores on the x axis
   - Putting SDG 4 Scores on the y axis

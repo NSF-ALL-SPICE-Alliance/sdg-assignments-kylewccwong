@@ -131,6 +131,22 @@ Cool! It seems that the darkest blue points (countries with the lowest SDG 5 sco
 #### <span style="color: red;">Challenge 1</span>
 Create a scatterplot using two different SDG scores. Then, color the points by using a third SDG score. In a couple of sentences, describe what you see.
 
+```{r}
+### goal 1 is no poverty, goal 13 is climate action, goal 16 is peace and justice (x, y and color)
+### my prediction is there that there will be a strong positive correlation here between all 3 variables
+ggplot(data = sdr_data, aes(x = goal_1_score, y= goal_16_score, color = goal_13_score)) +
+  geom_point()
+       
+```
+###interesting graph... mild correlation between poverty level and peace and justice score... more interesting was the color factor- countries that perform worse in the first 2 categories, performed better in the climate action category because they produce less carbon emission
+
+```{r}
+sdr_data %>%
+  select(country, goal_1_score, goal_13_score, goal_16_score)
+
+```
+
+
 ### Bar Chart
 
 When should we use a **bar chart**?
@@ -190,6 +206,15 @@ As we can see in the Oceania region, most Countries do not have the necessary da
 #### <span style="color: red;">Challenge 2</span>
 Create a new bar chart with countries only from the MENA region. 
 
+```{r}
+MENA_Data <- sdr_data %>%
+  filter(regions_used_for_the_sdr == "MENA")
+
+ggplot(data = MENA_Data, aes(x=goal_5_score, y=country)) +
+  geom_bar(stat = 'identity')
+```
+
+
 ### Histogram
 
 When do we use a **histogram**?
@@ -224,3 +249,12 @@ Countries that fall in the higher end of the Goal 4 spectrum belong to the OECD 
 
 #### <span style="color: red;">Challenge 3</span>
 Make a histogram for a different SDG score. Then, fill by region. In a couple of sentences, describe any interesting trends or what you notice from your new histogram.
+
+```{r}
+ggplot(sdr_data, aes(x=goal_6_score, fill = regions_used_for_the_sdr)) +
+  geom_histogram(bins=30, color="white") +
+  labs(x="Clean_Water_and_Sanitation", y = "Total Regions")
+
+```
+### Results are in-line for my expectations. Sub-Saharan Africa ranking lower and Eastern Europe and Central Asia ranking higher make sense
+### intuitively for the SDG scores. I am not too surprised with what this graph reflects.  

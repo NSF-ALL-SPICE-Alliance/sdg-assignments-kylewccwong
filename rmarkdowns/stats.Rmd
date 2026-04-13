@@ -197,15 +197,16 @@ To circle back and reinforce how the linear regression (line drawn through our s
   - What does this look like on scatter plot?
   
 ```{r, warning=FALSE, message=FALSE}
-ggplot(sdr_data, aes(x = goal_12_score, 
-                     y = goal_9_score)) +
+Goal_4_v_9 <- ggplot(sdr_data, aes(x = goal_4_score, y = goal_9_score, label = country)) +
   geom_point() +
   geom_smooth() +
   stat_cor() +
-  theme_minimal() 
-
+  theme_minimal() +
+  labs(x = "Goal 4 Scores (Quality Education)",
+       y= "Goal 9 scores (Industry, Innovation and Infrastructure")
+ggplotly(Goal_4_v_9)
 ```
-
+I chose goals 4 and 9 because I felt like there would be a strong correlation between the quality of education and a country's pursuit of innovation. Based on the visualization and correlation coefficient, we can see that my prediction was on track and that there is a strong correlation between the two factors. Turkmenistan appears to be the main outlier in this graph. Turkmenistan placed very highly in education, at near 100 score, but ranked below 2 in goal 9. After a google search, it appears this correlation is due to a few factors. The main reason for this as I understand it is because their education is outdated. The education in Turkmenistan ensures that its students are literate, but the education does not branch out to critical thinking or technical skills- the type of learning that would lead to a progression in their innovation and infrastructure. 
 ### <span style="color: red;">Challenge 1</span>
 
 - Edit the code chunk above to plot a linear regression of 2 different sdg scores 

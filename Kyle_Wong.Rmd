@@ -1,0 +1,206 @@
+---
+title: "Kyle_Wong"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse) # most popular R package
+library(here) # cuts out long file paths when reading in data (makes reproducible)
+library(janitor) # cleans column names
+library(naniar) # analyzes missing data
+
+#Libary(map visualization)
+library(plotly)
+library(rnaturalearth)
+library(leaflet)
+library(sf)
+#library(missForest)
+library(cluster) 
+library(randomForest) # runs random forest algorithm
+library(missRanger) # imputes data through with random forest method
+library(factoextra) # visualizes clusters
+library(pdp)
+library(vembedr)
+```
+
+```{r, message=FALSE}
+sdr_data <- read_csv(here("data/SDR-2023-Data.csv"))
+```
+
+###comment on what read_csv and here() functions do
+
+```{r}
+sdr_data <- sdr_data %>% 
+  clean_names()
+```
+
+###comment on what clean_names does
+
+```{r}
+ggplot(data = sdr_data, aes(x= goal_4_score, y = goal_13_score, color = regions_used_for_the_sdr)) +
+  geom_point()+
+  labs(title = "Quality Education vs Climate Action", x = "Quality Education (SDG 4)", y = "Climate Action (SDG 13)",      color = "Regions")
+```
+
+```{r}
+world <- ne_countries(scale = "medium", returnclass = "sf")
+```
+
+
+```{r}
+world <- world %>% 
+  select(name_long, iso_a3, geometry)
+```
+
+
+```{r}
+# Rename a column in a data frame or matrix
+colnames(sdr_data)[which(colnames(sdr_data) == "country_code_iso3")] <- "iso_a3"
+```
+
+
+```{r}
+sdr_data_world_joined <- left_join(sdr_data, world, by = "iso_a3")
+```
+
+
+```{r}
+class(sdr_data_world_joined)
+```
+
+```{r}
+sdr_data_world_joined <- st_as_sf(sdr_data_world_joined)
+```
+
+```{r}
+sdr_data_world_joined <- st_transform(sdr_data_world_joined, "+proj=longlat +datum=WGS84")
+```
+
+
+
+```{r}
+mytext <- paste(
+    "Country: ", sdr_data_world_joined$country,"<br/>", 
+    "Goal 13 Score: ", round(sdr_data_world_joined$goal_13_score, 2), 
+    sep="") %>%
+  lapply(htmltools::HTML)
+
+leaflet(sdr_data_world_joined) %>% 
+  addTiles()  %>% 
+  setView( lat=10, lng=0 , zoom=2) %>%
+  addPolygons(stroke = FALSE, fillOpacity = 0.5, smoothFactor = 0.5, color = ~colorQuantile("Purples", goal_13_score)(goal_13_score), label = mytext)
+```
+
+
+## machine learning
+
+```{r}
+sdr_data_normalized_scores <- sdr_data %>% 
+  select(country, goal_13_score, contains("normalized_score"))
+```
+
+
+```{r}
+sdr_data_normalized_scores <- sdr_data_normalized_scores %>% 
+  select(-normalized_score_sdg13_co2gcp, -normalized_score_sdg13_co2import, -normalized_score_sdg13_co2export)
+```
+
+
+```{r}
+sum(is.na(sdr_data_normalized_scores))
+```
+
+
+```{r}
+gg_miss_var(sdr_data_normalized_scores, show_pct = TRUE) +
+  theme(axis.text.y = element_text(size = 8)) 
+```
+
+
+```{r}
+sdr_data_normalized_scores_longer <- sdr_data_normalized_scores %>% 
+  pivot_longer(cols = !country)
+```
+
+```{r}
+missing_data_by_country <- sdr_data_normalized_scores_longer %>%
+ group_by(country) %>%
+ miss_var_summary() %>% 
+ arrange(desc(pct_miss))
+
+missing_data_by_country
+```
+
+```{r}
+completely_na_countries  <- missing_data_by_country$country[missing_data_by_country$pct_miss == 100]
+completely_na_countries
+```
+
+```{r}
+sdr_data_normalized_scores_no_na_countries <- sdr_data_normalized_scores %>% 
+  filter(!country %in% completely_na_countries)
+```
+
+```{r}
+sdr_data_normalized_scores_less_na <- sdr_data_normalized_scores_no_na_countries %>%
+  select(where(~ sum(is.na(.))/length(.) <= 0.2))
+```
+
+
+```{r message=FALSE, results='hide'}
+sdr_data_imputed <- missRanger(sdr_data_normalized_scores_less_na)
+```
+
+```{r}
+sdr_data_imputed <- sdr_data_imputed %>%
+  remove_rownames %>%
+  column_to_rownames(var="country")
+
+```
+
+
+```{r}
+rf_climate <- randomForest(goal_13_score ~ .,
+                           data = sdr_data_imputed,
+                           importance = TRUE)
+```
+
+
+```{r}
+importance_df <- as.data.frame(rf_climate$importance)
+
+```
+
+
+```{r}
+importance_df_top_10 <- importance_df %>%
+  rownames_to_column(var = "variable") %>%
+  slice_max(n = 10, order_by = `%IncMSE`)
+```
+
+
+```{r}
+ggplot(importance_df_top_10, aes(x = `%IncMSE`, y = reorder(variable, `%IncMSE`))) +
+  geom_bar(stat = "identity", fill = "steelblue", color = "black") +
+  theme_minimal() +
+  labs(title = "10 Most Important Variables in Predicting Climate Action",
+       y = "SDG Indicator",
+       x = "Feature Importance (% Increase in Mean Squared Error)")
+
+
+```
+
+```{r}
+ggplot(data = sdr_data, aes(x= goal_8_score, y = goal_13_score, color = regions_used_for_the_sdr)) +
+  geom_point()+
+  labs(title = "Decent Work and Economic Growth vs Climate Action", x = "Decent Work and Economic Growth (SDG 8)", y = "Climate Action (SDG 13)",      color = "Regions")
+```
+
+
+
+
+
+
+

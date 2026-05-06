@@ -12,37 +12,42 @@ library(janitor) # cleans column names
 library(naniar) # analyzes missing data
 
 #Libary(map visualization)
-library(plotly)
-library(rnaturalearth)
-library(leaflet)
-library(sf)
+library(plotly) #ggplot
+library(rnaturalearth) #access public domain map data
+library(leaflet) #create map visulaizations
+library(sf)#clean/organize data used in map and spacial visualizations
+
 #library(missForest)
-library(cluster) 
+library(cluster)  #find hidden patterns among seemingly unrelated data
 library(randomForest) # runs random forest algorithm
 library(missRanger) # imputes data through with random forest method
 library(factoextra) # visualizes clusters
-library(pdp)
-library(vembedr)
+library(pdp) #helps to better understand machine learning models
 ```
 
 ```{r, message=FALSE}
 sdr_data <- read_csv(here("data/SDR-2023-Data.csv"))
 ```
 
-###comment on what read_csv and here() functions do
+#here tells us where specific data lies
+#read_csv helps us process data that is in csv format
 
 ```{r}
 sdr_data <- sdr_data %>% 
   clean_names()
 ```
 
-###comment on what clean_names does
+###clean_names helps put our data into a clean, standard format
 
 ```{r}
 ggplot(data = sdr_data, aes(x= goal_4_score, y = goal_13_score, color = regions_used_for_the_sdr)) +
   geom_point()+
   labs(title = "Quality Education vs Climate Action", x = "Quality Education (SDG 4)", y = "Climate Action (SDG 13)",      color = "Regions")
 ```
+###ggplot lets us create a scatter plot, labs lets us title the different categories and axes
+
+#
+For my final assignment, I decided I wanted to explore climate action. When I think of Sustainable development goals, climate action is one of the SDG's that stands out to me as one of the more urgent problems to solve. Without diving too deep into how the rankings were created, I decided that my first visualization would be a scatter plot. Before making the plot, I chose a second SDG that I felt would have a strong correlation to climate action. I was fairly surprised by the results of the scatter and several details stood out to me. The most interesting points on the graph to me were Sub-Saharan Africa's low education score but high climate action scores. I also noticed that while there seemed to be a positive correlation between higher quality education scores and climate action scores, it wasn't that strong of a correlation due to the high volume of outliers. I also noted that America ranked very low for climate action but nearly perfect for quality education. 
 
 ```{r}
 world <- ne_countries(scale = "medium", returnclass = "sf")
@@ -93,6 +98,8 @@ leaflet(sdr_data_world_joined) %>%
   addPolygons(stroke = FALSE, fillOpacity = 0.5, smoothFactor = 0.5, color = ~colorQuantile("Purples", goal_13_score)(goal_13_score), label = mytext)
 ```
 
+###
+The next visualization I created was an interactive heat map. The heat map was specifically focused on SDG 13, climate action. Using the heat map definitely helped visualize the data in a more organized way. The map drives home some observations I had from visualization 1 such as Sub-Saharan Africa leading all regions as the top SDG 13 performing country. These visuals piqued my curiosity so much, that I looked more into how scores for SDG 13 were calculated. After understanding how scores were calculated, the data visualizations made much more sense. One of the reasons Africa performed so well in climate action while underperforming in quality education is because they simply don't produce on the same scale as other more developed countries. They also heavily invested into the infrastructure of "clean energy." Another score I was suprprised by was India. They consistently rank as one of the highest carbon-emitting countries, but they rank extremely high for SDG 13 because the SDG score is calculated using per capita values rather than total emissions. 
 
 ## machine learning
 
@@ -192,15 +199,15 @@ ggplot(importance_df_top_10, aes(x = `%IncMSE`, y = reorder(variable, `%IncMSE`)
 
 ```
 
+#The lengthy code chunks above my 3rd visulization are mainly cleaning related. Since we are using normalized scores for our 3rd visualization, I wanted to make sure we eliminated all outliers and incomplete data. One of the large codes from above made sure to not include all regional data that had 20% or more data missing. As we can see from this visualizaton, the most important SDG's in predicting climate action were SDG 8 and SDG 12, with SDG 8 just edging it out. After reviewing the SDG 8 indicators, I believe the 2 normalized SDG 8 scores from this graph are related to target 8.7-(forced labor, modern slavery, child labor) and 8.1-(strengthen capacity of domestic financial institutions). The two biggest sdg 12 predictors were target 12.2-(sustainable management and efficient use of natural resources) and 12.4-(management of chemical and waste throughout their lifecycle in accordance with international frameworks). Intuitively, these indicators make sense as crucial factors in predicting SDG 13. 
+
+per
 ```{r}
 ggplot(data = sdr_data, aes(x= goal_8_score, y = goal_13_score, color = regions_used_for_the_sdr)) +
   geom_point()+
   labs(title = "Decent Work and Economic Growth vs Climate Action", x = "Decent Work and Economic Growth (SDG 8)", y = "Climate Action (SDG 13)",      color = "Regions")
 ```
+#For the final data vis, we finish the same way we started- a scatterplot. This time, when compared to the first graph we have a more refined product and cleaner correlation display. We did this through the cleaning process from the last visualization that discarded the countries missing more than 20% of their data. As we found from visualization 3, SDG 8 appeared to be the most important variable in predicting SDG 13, so we used it for our x axis/input. Our findings follow conventional wisdom, as we gathered from our first visualization that the way SDG 13 is calculated is through total carbon emissions. Because of this, we see a similar pattern to the first visualization, in that the countries that perform well economically, will inversely perform very poorly with climate action and vice versa. Even though quality education (SDG 4) didn't rank in the 10 most predictive variables, I found it interesting that it still generally followed the same curve as SDG 8(Highest predictive variable)- and for the same reason. 
 
-
-
-
-
-
+#One of my takeaways from this lesson is the importance of understanding your data fully before planning any visualizations or data products. In this specific assignment, I created my first visualization without fully understaning how each individual SDG was scored, leaving me confused on why some regions scored the way they were. With more context, it made more sense. As a data analyst, your job is to create a story using the data- to make a story and drive a point, you have to understand the data inside-out. 
 
